@@ -1,0 +1,202 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<dom-module id="repair-or-replace">
+  <style>
+    :host {
+      display: block;
+      height: 800px;
+    }
+    .inputs strong,
+    h1 strong {
+      margin-right: 6px;
+    }
+    .inputs,
+    .comparison {
+      @apply(--layout-horizontal);
+      margin-bottom: 12px;
+    }
+    .comparison {
+      height: 100px;
+    }
+    .inputs .option,
+    .comparison .option {
+      @apply(--layout-flex);
+      margin-right: 24px;
+    }
+    .bar {
+      position: relative;
+      height: 100px;
+    }
+    .bar div {
+      position: absolute;
+      left: 0px;
+      width: 100%;
+      white-space: nowrap;
+      overflow: visible;
+      color: #fff;
+      text-align: center;
+      background: #3F51B5;
+    }
+    .bar div.negative {
+      background: #f44336;
+    }
+  </style>
+  <template>
+    <h1><strong>Equipment Type:</strong><span>{{equipmentType}}</span></h1>
+    <div class="inputs">
+      <div class="option">
+        <p><strong>Date Installed:</strong><span>{{dateFmt(installationDate)}}</span></p>
+        <p><strong>Life Span:</strong><span>{{lifeSpan}}</span> years</p>
+        <p><strong>Life Remaining:</strong><span>{{dateFmt(lifeRemaining)}}</span> years</p>
+        <p><strong>Purchase Price:</strong><span>{{dollarFmt(purchasePrice)}}</span></p>
+        <p>
+          <strong>Current Market Value:</strong><span>{{dollarFmt(currentMarketValue)}}</span><br>
+          <small>(Linear Depreciation)</small>
+        </p>
+        <p><strong>Salvage Value:</strong><span>{{dollarFmt(salvageValue)}}</span></p>
+        <paper-input-container alwaysFloatLabel="true">
+          <label>Repair (Present Net Value)</label>
+          <input is="iron-input" bind-value="{{repairPNV}}">
+        </paper-input-container>
+      </div>
+      <div class="option">
+        <p><strong>Interest Rate:</strong><span>{{percentFmt(interestRate)}}</span></p>
+        <p><strong>Preventative Maintenance:</strong><span>{{dollarFmt(maintenanceCost)}}</span></p>
+        <p><strong>Maintenance Increase/Yr:</strong><span>{{maintenanceIncrease}}</span>%</p>
+        <p><strong>Removal Cost:</strong><span>{{dollarFmt(removalCost)}}</span></p>
+        <p><strong>Date of Analysis:</strong><span>{{dateFmt(new Date())}}</span></p>
+        <paper-input-container alwaysFloatLabel="true">
+          <label>Replace (Present Net Value)</label>
+          <input is="iron-input" bind-value="{{replacePNV}}">
+        </paper-input-container>
+      </div>
+    </div>
+    <div class="comparison">
+      <div class="option">
+        <h2>Repair PNV</h2>
+        <div class="bar"><div class="repair-pnv-bar">{{dollarFmt(repairPNV)}}</div></div>
+      </div>
+      <div class="option">
+        <h2>Replace PNV</h2>
+        <div class="bar"><div class="replace-pnv-bar">{{dollarFmt(replacePNV)}}</div></div>
+      </div>
+    </div>
+  </template>
+</dom-module>
+<script>
+  (function () {
+    var MS_PER_HOUR = 1000 * 60 * 60;
+    var MS_PER_DAY = MS_PER_HOUR * 24;
+    var MS_PER_YEAR = MS_PER_DAY * 365;
+
+    Polymer({
+      is: 'repair-or-replace',
+      properties: {
+        repairPNV: {
+          type: Number,
+          observer: 'redrawBars'
+        },
+        replacePNV: {
+          type: Number,
+          observer: 'redrawBars'
+        }
+      },
+
+      ready: function() {
+        this.getInitValues();
+        this.calculate();
+      },
+
+      getInitValues: function() {
+        // Get these values from Pipe.
+        this.interestRate = 0.045;
+        this.equipmentType = 'HVAC - wall mount';
+        this.installationDate = new Date('1/13/2014');
+        this.lifeSpan = 5;
+        this.purchasePrice = 30000;
+        this.maintenanceCost = 4000;
+        this.maintenanceIncrease = 0;
+        this.salvageValue = 2000;
+        this.removalCost = 0;
+        this.timeOfAnalysis = new Date();
+      },
+
+      calculate: function() {
+        this.lifeRemaining = this.lifeSpan - ((this.timeOfAnalysis - this.installationDate) / MS_PER_YEAR);
+        this.currentMarketValue =
+            this.salvageValue + ((this.lifeRemaining / this.lifeSpan) * (this.purchasePrice - this.salvageValue));
+        this.repairPNV = this.npv(this.interestRate, this.lifeRemaining, this.maintenanceCost, this.salvageValue);
+        this.replacePNV = -234.12;
+      },
+
+      npv: function(rate, periods, paymentPerPeriod, futureValue) {
+        var value = 0;
+        for (var i = 0; i < Math.ceil(periods); i++) {
+          var periodRemainder = periods - i > 1 ? 1 : periods - i;
+          value += paymentPerPeriod * periodRemainder / Math.pow(1 + rate, i + periodRemainder);
+        }
+        return value;
+      },
+
+      dollarFmt: function(num) {
+        var numParts = num.toString().split('.');
+        var intStr = numParts[0];
+        var intParts = [];
+        while(intStr) {
+          intParts.push(intStr.slice(-3));
+          intStr = intStr.slice(0, -3)
+        }
+        var decimalStr = (numParts[1] && numParts[1].slice(0, 2)) || '00';
+        return (num >= 0 ?
+            '$' + intParts.reverse().join(',') + '.' + decimalStr :
+            '-$' + (-num));
+      },
+
+      dateFmt: function(date) {
+        return date.toLocaleString('en-US', {day: 'numeric', year: 'numeric', month: 'short'});
+      },
+
+      percentFmt: function(num) {
+        return (num * 100) + '%';
+      },
+
+      redrawBars: function() {
+        var maxHeight = 100;
+        var splitSign = (this.repairPNV * this.replacePNV) < 0;
+        var repairPNVEl = this.$$('.repair-pnv-bar'),
+            replacePNVEl = this.$$('.replace-pnv-bar');
+        if (splitSign) {
+          var total = Math.abs(this.repairPNV) + Math.abs(this.replacePNV);
+          var repairHeight = Math.abs(this.repairPNV) / total *  maxHeight;
+          var replaceHeight = Math.abs(this.replacePNV) / total *  maxHeight;
+          repairPNVEl.style.height = repairHeight + 'px';
+          replacePNVEl.style.height = replaceHeight + 'px';
+          repairPNVEl.style.bottom = (this.repairPNV > 0 ? replaceHeight : 0) + 'px';
+          replacePNVEl.style.bottom = (this.replacePNV > 0 ? repairHeight : 0) + 'px';
+          repairPNVEl.style.top = replacePNVEl.style.top = '';
+        } else {
+          var maxVal = Math.max(Math.abs(this.repairPNV), Math.abs(this.replacePNV));
+          repairPNVEl.style.height = (Math.abs(this.repairPNV) / maxVal *  maxHeight) + 'px';
+          replacePNVEl.style.height = (Math.abs(this.replacePNV) / maxVal *  maxHeight) + 'px';
+          if (maxVal > 0) {
+            repairPNVEl.style.bottom = replacePNVEl.style.bottom = '0px';
+            repairPNVEl.style.top = replacePNVEl.style.top = '';
+          } else {
+            repairPNVEl.style.top = replacePNVEl.style.top = '0px';
+            repairPNVEl.style.bottom = replacePNVEl.style.bottom = '';
+          }
+        }
+        if (this.repairPNV < 0) { repairPNVEl.classes.add('negative') };
+        if (this.replacePNV < 0) { replacePNVEl.classList.add('negative') };
+      }
+    });
+  })();
+</script>
