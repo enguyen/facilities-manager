@@ -58,6 +58,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <body unresolved class="fullbleed layout vertical">
   <span id="browser-sync-binding"></span>
   <template is="dom-bind" id="app">
+    <get-flux-data values={{values}}></get-flux-data>
 
     <paper-drawer-panel id="paperDrawerPanel">
       <div drawer>
@@ -67,22 +68,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <span class="paper-font-title">Menu</span>
         </paper-toolbar>
 
+        <!-- Interest Rate -->
+        <paper-input-container alwaysFloatLabel="true" style="margin: 16px;">
+          <label>Interest Rate (%)</label>
+          <input is="iron-input" bind-value="{{interestRate}}" value="4.5">
+        </paper-input-container>
+
         <!-- Drawer Content -->
           <paper-menu class="list" attr-for-selected="data-route" selected="{{route}}" on-iron-select="onMenuSelect">
-              <a data-route="home" href="/">
-                <iron-icon icon="home"></iron-icon>
-                <span>Home</span>
-              </a>
+            <a data-route="home" href="/">
+              <iron-icon icon="home"></iron-icon>
+              <span>Home</span>
+            </a>
 
-              <!-- <a data-route="users" href="/users">
-                <iron-icon icon="info"></iron-icon>
-                <span>Users</span>
+            <template is="dom-repeat" items="{{values}}" index-as="item_no">
+              <a data-route="{{item_no}}" href="/">
+                <!-- <iron-icon icon="info"></iron-icon> -->
+                <span>{{item.Name}}</span>
               </a>
-
-              <a data-route="contact" href="/contact">
-                <iron-icon icon="mail"></iron-icon>
-                <span>Contact</span>
-              </a> -->
+            </template>
           </paper-menu>
       </div>
       <paper-header-panel main mode="waterfall-tall">
@@ -106,39 +110,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         <!-- Main Content -->
         <div class="content">
-          <iron-pages attr-for-selected="data-route" selected="{{route}}">
 
-            <section data-route="home">
-              <paper-material elevation="1" style="max-width: 640px;">
-                <repair-or-replace></repair-or-replace>
-              </paper-material>
-            </section>
+          <template is="dom-repeat" items="{{values}}" index_as="item_no">
+            <iron-pages attr-for-selected="data-route" selected="{{route}}">
+              <section data-route="home">
+                <paper-material elevation="1" style="max-width: 640px;">
+                  <repair-or-replace
+                      equipment-obj="[[item]]" interest-rate="[[interestRate]]">
+                  </repair-or-replace>
+                </paper-material>
+              </section>
+            </iron-pages>
+          </template>
 
-            <section data-route="users">
-              <paper-material elevation="1">
-                <h2 class="paper-font-display2">Users</h2>
-                <p>This is the users section</p>
-                <a href="/users/Rob">Rob</a>
-              </paper-material>
-            </section>
-
-            <section data-route="user-info">
-              <paper-material elevation="1">
-                <h2 class="paper-font-display2">
-                User:<span>{{params.name}}</span>
-                </h2>
-                <div>This is <span>{{params.name}}</span>'s section</div>
-              </paper-material>
-            </section>
-
-            <section data-route="contact">
-              <paper-material elevation="1">
-                <h2 class="paper-font-display2">Contact</h2>
-                <p>This is the contact section</p>
-              </paper-material>
-            </section>
-
-          </iron-pages>
         </div>
       </paper-header-panel>
     </paper-drawer-panel>
@@ -160,7 +144,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </template>
 
   <!-- build:js scripts/app.js -->
-  <!--<script src="scripts/app.js"></script>-->
+  <script src="scripts/app.js"></script>
   <!-- endbuild-->
 </body>
 

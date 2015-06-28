@@ -1,0 +1,27 @@
+<dom-module id="get-flux-data">
+  <template>
+    <iron-jsonp-library id="valuesPathEndpoint"
+        library-url="https://flux-keunwoo-925348cf.appspot.com/public/latest?projectId=akYW4OnMxqRVjepA4&keyId=40772080f9dd6cc71ffaef6c2c14bb75&userToken=ZXJpY0BmbHV4Lmlv.lOj0ixZs-3i03azmAX60dvu2AKFRWSn0N92fnGfYXywt&callback=%%callback%%"
+        notify-event="api-load"
+        on-api-load="getInitValues">
+    </iron-jsonp-library>
+  </template>
+</dom-module>
+<script>
+  (function() {
+    Polymer({
+      is: 'get-flux-data',
+
+      properties: {
+        values: {
+          type: Array,
+          notify: true
+        }
+      },
+
+      getInitValues: function(e) {
+        this.values = e.detail[0];
+      }
+    });
+  })();
+</script>
