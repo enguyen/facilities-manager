@@ -1,4 +1,4 @@
-![](https://cloud.githubusercontent.com/assets/110953/7877439/6a69d03e-0590-11e5-9fac-c614246606de.png)
+![](https://raw.githubusercontent.com/enguyen/facilities-manager/master/app/images/screenshot.png)
 ## Facilities Manager Demo
 
 Demonstration app build on Polymer 1.0 for the AEC Hackathon in June, 2015. Surfaces equipment data
